@@ -2,6 +2,8 @@
 Lo malo es que las bombas se generan luego del primer clic izquierdo, es decir, juesto después
 de descubrir una casilla.
 Se pueden poner banderas con clic derecho."""
+
+
 import tkinter as tk
 from tkinter import simpledialog
 from tkinter import messagebox
