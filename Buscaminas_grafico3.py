@@ -10,6 +10,9 @@ from tkinter import messagebox
 from datetime import datetime
 import random
 
+"""La clase Casilla representa una celda. Cada casilla tiene un valor, puede estar apretada, 
+marcada con una bandera, contener una bomba y estar asociada a un botón en la interfaz gráfica. 
+El método descubrir establece la casilla como apretada."""
 class Casilla:
     def __init__(self, valor=0):
         self.valor = valor
@@ -21,6 +24,10 @@ class Casilla:
     def descubrir(self):
         self.apretada = True
 
+"""La siguiente clase implementa el patrón de diseño Singleton, garantizando que solo haya una
+instancia del tablero en el juego. Contiene métodos para colocar minas, contar minas alrededor 
+de una casilla, inicializar el tablero, reiniciar el juego y gestionar el estado del juego, como
+el conteo de casillas apretadas, banderas, cronómetro, y el estado de ganar o perder."""
 class Tablero:
     _instance = None
 
@@ -73,6 +80,11 @@ class Tablero:
         self.perdio = False
         self.colocar_minas()
 
+"""La clase Juego gestiona la lógica del juego. Utiliza un objeto Tablero para representar el estado 
+del juego. Sus métodos incluyen iniciar una partida, descubrir una casilla, revelar bombas en caso de perder,
+manejar la colocación de banderas, reiniciar la partida, establecer la dificultad, y mostrar mensajes de fin 
+de juego en caso de victoria o derrota. La clase utiliza el tiempo transcurrido para mostrar el tiempo 
+(aún no funciona) al finalizar el juego y se comunica con la interfaz gráfica para actualizarla."""
 class Juego:
     def __init__(self, filas, columnas, num_minas):
         self.ranking = []
@@ -140,6 +152,11 @@ class Juego:
         messagebox.showinfo("Victoria", f"¡Has ganado!\nTiempo: {tiempo_transcurrido}")
         self.tablero.reiniciar()
 
+"""La clase InterfazGrafica maneja toda la interfaz gráfica del juego. Al inicializarse, crea botones
+para las casillas del tablero y agrega botones para reiniciar y cambiar la dificultad. Define funciones 
+para manejar clics izquierdos y derechos en los botones, actualiza la interfaz según el estado del juego 
+y permite reiniciar la partida o cambiar la dificultad. También contiene una función para limpiar la 
+interfaz gráfica."""
 class InterfazGrafica:
     def __init__(self, juego):
         self.juego = juego
@@ -214,6 +231,11 @@ class InterfazGrafica:
                 for j in range(self.juego.tablero.columnas):
                     if self.juego.tablero.casillas[i][j].boton is not None:
                         self.juego.tablero.casillas[i][j].boton.config(state=tk.NORMAL, text='')
+
+"""El siguiente bloque  inicializa el juego y la interfaz gráfica al ejecutar el script de manera independiente.
+Solicita al usuario (jugador) seleccionar la dificultad mediante un cuadro de diálogo, establece las dimensiones 
+del tablero y el número de minas según la dificultad seleccionada, y luego inicia el juego y la interfaz gráfica. 
+La interfaz gráfica continuará ejecutándose hasta que el usuario cierre la ventana principal del juego."""
 
 if __name__ == "__main__":
     dificultad = tk.simpledialog.askstring("Seleccionar Dificultad", "Ingrese la dificultad (facil(1), intermedio(2), dificil(3)):")
