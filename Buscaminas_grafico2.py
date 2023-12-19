@@ -173,7 +173,6 @@ class InterfazGrafica:
                 else:
                     boton.config(text='')
 
-
 if __name__ == "__main__":
     juego = Juego(filas=8, columnas=8, num_minas=10)
     juego.partida()
