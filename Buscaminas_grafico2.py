@@ -1,5 +1,6 @@
-# Genera un tablero con bombas, se pueden descubir casillas y poner banderas, 
-# pero las bombas se muestran luego del primer clic izquierdo.
+"""Genera un tablero con bombas, se pueden descubir casillas y poner banderas,
+pero las bombas se muestran luego del primer clic izquierdo."""
+
 import random
 from datetime import datetime
 import tkinter as tk
