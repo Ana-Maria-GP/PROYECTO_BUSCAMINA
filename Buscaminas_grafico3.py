@@ -1,16 +1,16 @@
-# Genera un tablero con bombas, se pueden descubir casillas y poner banderas, 
-# pero las bombas se muestran luego del primer clic izquierdo.
-import random
-from datetime import datetime
 import tkinter as tk
+from tkinter import simpledialog
 from tkinter import messagebox
+from datetime import datetime
+import random
 
 class Casilla:
     def __init__(self, valor=0):
         self.valor = valor
         self.apretada = False
         self.marcada_bandera = False
-        self.bomba = False  # Nuevo atributo para indicar si la casilla contiene una bomba
+        self.bomba = False
+        self.boton = None # Nuevo atributo para almacenar el botón asociado a la casilla
 
     def descubrir(self):
         self.apretada = True
@@ -29,6 +29,8 @@ class Tablero:
             cls._instance.casilla_apretada = 0
             cls._instance.casilla_bandera = 0
             cls._instance.cronometro = None
+            cls._instance.gano = False
+            cls._instance.perdio = False
             cls._instance.colocar_minas()
         return cls._instance
 
@@ -57,13 +59,13 @@ class Tablero:
                     self.casillas[i][j].valor = self.contar_minas_alrededor(i, j)
 
     def reiniciar(self):
-        # Reinicia el tablero
         self.casillas = [[Casilla() for _ in range(self.columnas)] for _ in range(self.filas)]
         self.casilla_apretada = 0
         self.casilla_bandera = 0
         self.cronometro = None
-        self.gano = False  # Nuevo atributo para controlar si se ganó
-        self.perdio = False  # Nuevo atributo para controlar si se perdió
+        self.gano = False
+        self.perdio = False
+        self.colocar_minas()
 
 class Juego:
     def __init__(self, filas, columnas, num_minas):
@@ -80,16 +82,16 @@ class Juego:
             casilla.descubrir()
             self.tablero.casilla_apretada += 1
             if casilla.valor == -1:
-                if not self.tablero.perdio:  # Solo si no se ha perdido antes
-                    self.revelar_bombas()  # Revelar bombas solo si ya se ha perdido
-                return False  # Fin del juego (mina descubierta)
+                if not self.tablero.perdio:
+                    self.revelar_bombas()
+                return False
             elif casilla.valor == 0:
                 self.descubrir_casillas_vecinas(fila, columna)
             if self.tablero.casilla_apretada == self.tablero.casilla_total - self.tablero.contador_minas:
-                self.tablero.gano = True  # Marcar que se ha ganado el juego
-                self.revelar_bombas()  # Revelar bombas al ganar
-                return True  # Ganó el juego (todas las casillas sin minas fueron descubiertas)
-        return None  # Continuar jugando
+                self.tablero.gano = True
+                self.revelar_bombas()
+                return True
+        return None
 
     def revelar_bombas(self):
         for i in range(self.tablero.filas):
@@ -99,7 +101,7 @@ class Juego:
 
     def revelar_bomba(self, fila, columna):
         self.tablero.casillas[fila][columna].descubrir()
-        self.actualizar_interfaz()  # Actualizar la interfaz después de revelar una bomba
+        self.actualizar_interfaz()
 
     def descubrir_casillas_vecinas(self, fila, columna):
         for i in range(max(0, fila - 1), min(self.tablero.filas, fila + 2)):
@@ -142,14 +144,19 @@ class InterfazGrafica:
     def inicializar_interfaz(self):
         for i in range(self.juego.tablero.filas):
             for j in range(self.juego.tablero.columnas):
-                # Crear botón y asignar función de clic izquierdo y derecho
                 boton = tk.Button(self.ventana, width=4, height=2)
                 boton.grid(row=i, column=j)
-                # Guardar el botón en el juego para poder accederlo más tarde
                 self.juego.tablero.casillas[i][j].boton = boton
-                # Asociar eventos de clic izquierdo y derecho al botón
+                boton.casilla = self.juego.tablero.casillas[i][j]
                 boton.bind('<Button-1>', lambda event, i=i, j=j: self.clic_izquierdo(event, i, j))
                 boton.bind('<Button-3>', lambda event, i=i, j=j: self.clic_derecho(event, i, j))
+
+        # Agregar botones para reiniciar y cambiar dificultad
+        reiniciar_button = tk.Button(self.ventana, text="Reiniciar", command=self.reiniciar_juego)
+        reiniciar_button.grid(row=self.juego.tablero.filas, column=0, columnspan=self.juego.tablero.columnas, sticky='we')
+
+        dificultad_button = tk.Button(self.ventana, text="Cambiar Dificultad", command=self.cambiar_dificultad)
+        dificultad_button.grid(row=self.juego.tablero.filas + 1, column=0, columnspan=self.juego.tablero.columnas, sticky='we')
 
     def clic_izquierdo(self, event, fila, columna):
         self.juego.descubrir_casilla(fila, columna)
@@ -163,7 +170,7 @@ class InterfazGrafica:
         for i in range(self.juego.tablero.filas):
             for j in range(self.juego.tablero.columnas):
                 casilla = self.juego.tablero.casillas[i][j]
-                boton = casilla.boton  # Acceder al botón guardado en el juego
+                boton = casilla.boton
                 if casilla.apretada:
                     boton.config(state=tk.DISABLED, text=str(casilla.valor))
                 elif casilla.marcada_bandera:
@@ -173,8 +180,51 @@ class InterfazGrafica:
                 else:
                     boton.config(text='')
 
+        if self.juego.tablero.perdio:
+            self.juego.fin_del_juego()
+        elif self.juego.tablero.gano:
+            self.juego.victoria_del_juego()
+
+    def reiniciar_juego(self):
+        self.juego.reiniciar_partida()
+        self.limpiar_interfaz()
+        self.actualizar_interfaz()
+
+    def cambiar_dificultad(self):
+        #dificultad = tk.simpledialog.askstring("Cambiar Dificultad", "Ingrese la dificultad (facil, intermedio, dificil):")
+        dificultad = simpledialog.askstring("Cambiar Dificultad", "Ingrese la dificultad (facil, intermedio, dificil):")
+        if dificultad:
+            if dificultad.lower() == 'facil':
+                self.juego.establecer_dificultad(filas=5, columnas=5, num_minas=5)
+            elif dificultad.lower() == 'intermedio':
+                self.juego.establecer_dificultad(filas=7, columnas=7, num_minas=10)
+            elif dificultad.lower() == 'dificil':
+                self.juego.establecer_dificultad(filas=10, columnas=10, num_minas=20)
+            self.reiniciar_juego()
+
+    def limpiar_interfaz(self):
+        def limpiar_interfaz(self):
+            for i in range(self.juego.tablero.filas):
+                for j in range(self.juego.tablero.columnas):
+                    if self.juego.tablero.casillas[i][j].boton is not None:
+                        self.juego.tablero.casillas[i][j].boton.config(state=tk.NORMAL, text='')
+
 if __name__ == "__main__":
-    juego = Juego(filas=8, columnas=8, num_minas=10)
+    dificultad = tk.simpledialog.askstring("Seleccionar Dificultad", "Ingrese la dificultad (facil(1), intermedio(2), dificil(3)):")
+    filas, columnas, num_minas = 0, 0, 0
+
+    if dificultad == "1":
+        filas, columnas, num_minas = 5, 5, 3
+    elif dificultad == "2":
+        filas, columnas, num_minas = 7, 7, 10
+    elif dificultad == "3":
+        filas, columnas, num_minas = 10, 10, 15
+    else:
+        print("Dificultad no válida. Estableciendo dificultad por defecto.")
+        filas, columnas, num_minas = 8, 8, 12
+
+    juego = Juego(filas=filas, columnas=columnas, num_minas=num_minas)
     juego.partida()
     interfaz = InterfazGrafica(juego)
     interfaz.ventana.mainloop()
+
